@@ -54,10 +54,10 @@ struct ProgressBarTerminalPrinter: ProgressBarPrinter {
 // MARK: - ProgressBar
 
 public struct ProgressBar {
-    private(set) public var element = 1
+    private(set) public var element: UInt64 = 1
     public let startTime = getTimeOfDay()
     
-    public let count: Int
+    public let count: UInt64
     let configuration: [ProgressElementType]?
 
     public static var defaultConfiguration: [ProgressElementType] = [ProgressIndex(), ProgressBarLine(), ProgressTimeEstimates()]
@@ -70,7 +70,7 @@ public struct ProgressBar {
         return values.joined(separator: " ")
     }
     
-    public init(count: Int, configuration: [ProgressElementType]? = nil, printer: ProgressBarPrinter? = nil) {
+    public init(count: UInt64, configuration: [ProgressElementType]? = nil, printer: ProgressBarPrinter? = nil) {
         self.count = count
         self.configuration = configuration
         self.printer = printer ?? ProgressBarTerminalPrinter()
@@ -83,13 +83,16 @@ public struct ProgressBar {
         element += 1
     }
 
-    public mutating func setValue(_ index: Int) {
+    public mutating func setValue(_ index: UInt64) {
         guard index <= count && index >= 0 else { return }
         self.element = index
         let anotherSelf = self
         printer.display(anotherSelf)
     }
 
+    public mutating func finish() {
+        setValue(count)
+    }
 }
 
 
@@ -99,7 +102,7 @@ public struct ProgressGenerator<G: IteratorProtocol>: IteratorProtocol {
     var source: G
     var progressBar: ProgressBar
     
-    init(source: G, count: Int, configuration: [ProgressElementType]? = nil, printer: ProgressBarPrinter? = nil) {
+    init(source: G, count: UInt64, configuration: [ProgressElementType]? = nil, printer: ProgressBarPrinter? = nil) {
         self.source = source
         self.progressBar = ProgressBar(count: count, configuration: configuration, printer: printer)
     }
@@ -126,6 +129,6 @@ public struct Progress<G: Sequence>: Sequence {
     
     public func makeIterator() -> ProgressGenerator<G.Iterator> {
         let count = generator.underestimatedCount
-        return ProgressGenerator(source: generator.makeIterator(), count: count, configuration: configuration, printer: printer)
+        return ProgressGenerator(source: generator.makeIterator(), count: UInt64(count), configuration: configuration, printer: printer)
     }
 }
